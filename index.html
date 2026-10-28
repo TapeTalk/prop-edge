@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prop Edge Board</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#f6f5f1; --panel:#ffffff; --ink:#1b1d21; --muted:#6b6f78; --line:#e3e1da;
+    --accent:#1f5eff; --good:#127a46; --good-bg:#e5f4ec; --bad:#b4232c; --bad-bg:#fbe9ea;
+    --warn:#8a5a00; --warn-bg:#fff4dc; --chip:#eef0f4; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#111317; --panel:#191c22; --ink:#e9eaee; --muted:#9aa0ab; --line:#2a2e36;
+      --accent:#7aa2ff; --good:#5fd39a; --good-bg:#15301f; --bad:#ff8a8f; --bad-bg:#3a1c1f;
+      --warn:#f3c56b; --warn-bg:#352a12; --chip:#232731;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+  h1{font-size:22px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px}
+  .banner{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tab{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 16px;border-radius:999px;cursor:pointer;font-weight:600}
+  .tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .card h3{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .big{font-size:18px;font-weight:650}
+  .ok{color:var(--good)} .err{color:var(--bad)} .stale{color:var(--warn)}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .controls label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
+  .controls input,.controls select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:110px}
+  .controls .chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:14px}
+  .controls .chk input{width:auto}
+  button.primary{font:inherit;font-weight:650;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+  button.primary[disabled]{opacity:.6;cursor:wait}
+  .spacer{flex:1}
+  .msg{font-size:13px;color:var(--muted);margin:-6px 0 12px}
+  .tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:980px}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);position:sticky;top:0;background:var(--panel);cursor:default}
+  th.sortable{cursor:pointer} th.sorted{color:var(--ink)}
+  td.num{font-family:var(--mono);font-size:13px;white-space:nowrap}
+  tr.main{cursor:pointer} tr.main:hover td{background:var(--chip)}
+  .pill{display:inline-block;white-space:nowrap;font-size:12px;font-weight:650;padding:2px 8px;border-radius:999px;background:var(--chip)}
+  .pill.yes{background:var(--good-bg);color:var(--good)} .pill.no{background:var(--bad-bg);color:var(--bad)}
+  .edge{font-weight:700;color:var(--good)} .neg{color:var(--bad)}
+  .why{font-size:13px;color:var(--ink);max-width:360px}
+  .detail td{background:var(--bg);font-size:13px}
+  .books{border-collapse:collapse;min-width:0;width:auto}
+  .books th,.books td{padding:4px 10px;font-size:12px;border-bottom:1px dashed var(--line);position:static;background:transparent}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:12px}
+  summary{cursor:pointer;font-weight:650}
+  details p,details li{font-size:14px}
+  code{font-family:var(--mono);font-size:12.5px;background:var(--chip);padding:1px 5px;border-radius:5px}
+  .empty{padding:28px;text-align:center;color:var(--muted)}
+  .small{font-size:12px;color:var(--muted)}
+  .hidden{display:none}
+  @media (max-width:640px){ h1{font-size:19px} .controls input,.controls select{width:96px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Prop Edge Board</h1>
+      <div class="sub">Kalshi player props vs. de-vigged sportsbook consensus · Phase 1</div>
+    </div>
+    <div class="sub" id="genAt">Loading…</div>
+  </header>
+
+  <div class="banner">Research and paper-tracking tool. Numbers are probabilities, not guarantees, and nothing here is betting advice.</div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="nba">NBA</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="nfl">NFL</button>
+  </div>
+
+  <section id="tab-nfl" class="hidden">
+    <div class="card"><div class="big">NFL arrives in Phase 2.</div>
+      <p class="small">It will run separately from NBA with its own schedule and its own data file.</p></div>
+  </section>
+
+  <section id="tab-nba">
+    <div class="grid" id="statusCards"></div>
+    <div class="banner hidden" id="limitBanner"></div>
+
+    <div class="controls">
+      <label>Min edge (pts)<input id="minEdge" type="number" step="0.5" value="3"></label>
+      <label>Max spread (¢)<input id="maxSpread" type="number" step="1" value="5"></label>
+      <label>Min volume<input id="minVol" type="number" step="10" value="100"></label>
+      <label>Order size<input id="orderSize" type="number" step="1" min="1" value="10"></label>
+      <label>Sort by<select id="sortBy"><option value="conf">Confidence %</option><option value="edge">Edge</option></select></label>
+      <label class="chk"><input id="showAll" type="checkbox"> Show every matched prop</label>
+      <div class="spacer"></div>
+      <button class="primary" id="refreshBtn">Refresh</button>
+    </div>
+    <div class="msg" id="refreshMsg"></div>
+
+    <h2 style="font-size:17px;margin:4px 0 8px" id="tableTitle">Today's Best Props</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Player</th><th>Stat</th><th>Line</th><th>Side</th>
+          <th>Kalshi cost</th><th>Books' fair</th>
+          <th class="sortable" data-sort="edge">Edge</th>
+          <th class="sortable" data-sort="conf">Confidence</th>
+          <th>Liquidity</th><th>Why</th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <details id="mismatchBox"><summary>Line mismatches <span class="small" id="mmCount"></span></summary>
+      <p class="small">Kalshi's line and the books' lines differ, so no fair price is forced. These are excluded from picks.</p>
+      <div id="mmList"></div></details>
+
+    <details id="unmatchedBox"><summary>Kalshi props with no sportsbook line <span class="small" id="umCount"></span></summary>
+      <div id="umList" class="small"></div></details>
+
+    <details><summary>How it works</summary>
+      <ol>
+        <li><b>Scope.</b> Every run starts with Kalshi's open NBA player props (points, rebounds, assists, threes, and the combo stats). If Kalshi has none, nothing else is fetched and no free quota is spent.</li>
+        <li><b>Line matching.</b> A Kalshi contract like "25+ points" pays YES if the player scores 25 or more, which is the same bet as sportsbook <b>Over 24.5</b>. A book only counts if it posts both Over and Under at exactly that line. Different lines are listed under "Line mismatches", never stretched to fit.</li>
+        <li><b>Removing the vig.</b> For each book: implied% = 100/(odds+100) for plus odds, or |odds|/(|odds|+100) for minus odds. Fair Over = Over implied ÷ (Over implied + Under implied). Consensus = simple average of the books' fair Over. DFS apps and prediction markets are excluded from the consensus.</li>
+        <li><b>Kalshi cost.</b> YES buys at the YES ask; NO buys at the NO ask. Taker fee = round up(0.07 × contracts × price × (1 − price)) to the cent, divided by your order size. Cost per contract = ask + fee.</li>
+        <li><b>Edge</b> = fair probability of that side − cost per contract, in percentage points. A 60% fair chance bought at 55.7¢ all-in is a 4.3-point edge.</li>
+        <li><b>Qualifies</b> only when edge ≥ your minimum, the bid/ask spread on that side ≤ your max, total volume ≥ your minimum, and someone is actually offering contracts at the ask.</li>
+        <li><b>Confidence % (Phase 1)</b> = the consensus fair probability of the side you'd buy. Phase 3 adds the context adjustment (recent form, defense vs. position, comps) and shows the exact formula here.</li>
+        <li><b>Refresh</b> reloads the latest automated data, then tries to pull live Kalshi prices straight from your browser. Sportsbook odds only update on the scheduled runs (or when you run the workflow by hand), to protect the free quota.</li>
+      </ol>
+    </details>
+
+    <details id="diagBox"><summary>Diagnostics</summary><div id="diag" class="small"></div></details>
+  </section>
+</div>
+
+<script>
+const KALSHI_HOSTS = ["https://external-api.kalshi.com/trade-api/v2","https://api.elections.kalshi.com/trade-api/v2"];
+let DATA = null, liveAt = null, sortKey = "conf";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = (x,d=1) => x==null ? "—" : (x*100).toFixed(d)+"%";
+const cents = x => x==null ? "—" : (x*100).toFixed(1).replace(/\.0$/,"")+"¢";
+const pts = x => x==null ? "—" : (x>=0?"+":"")+(x*100).toFixed(1);
+const num = x => x==null ? "—" : Math.round(x).toLocaleString();
+function when(iso){
+  if(!iso) return "never";
+  const d = new Date(iso); if(isNaN(d)) return esc(iso);
+  const mins = Math.round((Date.now()-d)/60000);
+  const t = d.toLocaleString([], {weekday:"short", hour:"numeric", minute:"2-digit"});
+  if(mins < -1) return t;
+  return mins < 1 ? `just now (${t})` : mins < 120 ? `${mins} min ago (${t})` : t;
+}
+function amer(p){ if(p==null) return "—"; const n=Number(p); return (n>0?"+":"")+n; }
+
+function fee(price, size){
+  if(price==null) return 0;
+  const raw = 0.07*size*price*(1-price);
+  return Math.ceil(Math.round(raw*100*1e6)/1e6)/100/size;
+}
+
+function evaluate(p, s){
+  if(!p.consensus) return null;
+  const k = p.kalshi, fo = p.consensus.fair_over, out = [];
+  const sides = [
+    {side:"YES", ask:k.yes_ask, bid:k.yes_bid, fair:fo, size:k.yes_ask_size},
+    {side:"NO", ask:k.no_ask, bid:k.no_bid, fair:1-fo, size:k.yes_bid_size},
+  ];
+  for(const x of sides){
+    if(x.ask==null || x.ask<=0 || x.ask>=1) continue;
+    const f = k.fee_waived ? 0 : fee(x.ask, s.orderSize);
+    const cost = x.ask + f, edge = x.fair - cost;
+    const spread = (x.bid!=null && x.bid>0) ? x.ask - x.bid : null;
+    const fails = [];
+    if(edge < s.minEdge/100) fails.push("edge");
+    if(spread==null || spread > s.maxSpread/100 + 1e-9) fails.push("spread");
+    if((k.volume ?? 0) < s.minVol) fails.push("volume");
+    if(x.size!=null && x.size <= 0) fails.push("no size");
+    out.push({...x, fee:f, cost, edge, spread, qualifies: fails.length===0, fails});
+  }
+  if(!out.length) return null;
+  return out.sort((a,b)=>b.edge-a.edge)[0];
+}
+
+function why(p, e){
+  const books = p.books.map(b=>b.title).join(", ");
+  const sideTxt = e.side==="YES" ? `Over ${p.line}` : `Under ${p.line}`;
+  let s = `${p.books.length} book${p.books.length>1?"s":""} (${esc(books)}) price ${sideTxt} at ${pct(e.fair)} after removing the vig; `
+        + `Kalshi ${e.side} costs ${cents(e.ask)} + ${cents(e.fee)} fee = ${cents(e.cost)}, a ${pts(e.edge)}-pt ${e.edge>=0?"edge":"gap"}.`;
+  if(p.books.length===1) s += " Only one book, so treat the fair price with extra caution.";
+  if(p.kalshi.fee_waived) s += " Kalshi fee currently waived on this market.";
+  return s;
+}
+
+function settings(){
+  return { minEdge:+$("minEdge").value||0, maxSpread:+$("maxSpread").value||0,
+           minVol:+$("minVol").value||0, orderSize:Math.max(1,+$("orderSize").value||10),
+           showAll:$("showAll").checked };
+}
+
+function renderStatus(){
+  const d = DATA, src = d.sources||{}, k = src.kalshi||{}, o = src.odds||{}, q = (d.quota||{}).propline||{};
+  const kTime = liveAt ? `<span class="ok">Live from browser</span> · ${when(liveAt)}` :
+               (k.ok ? `<span class="ok">Automated</span> · ${when(k.updated_at)}` : `<span class="err">Unavailable</span>`);
+  const oCls = o.ok ? "ok" : (o.stale ? "stale" : "err");
+  const oTxt = o.ok ? "Fresh" : (o.stale ? "Cached (stale)" : "Unavailable");
+  const used = q.used_today_by_this_site ?? 0, lim = q.limit ?? 1000;
+  const rem = q.remaining != null ? q.remaining : Math.max(0, lim-used);
+  const next = (d.next_scheduled_runs||[])[0];
+  $("statusCards").innerHTML = `
+    <div class="card"><h3>Kalshi prices</h3><div class="big">${kTime}</div>
+      <div class="small">${num(k.markets)} open NBA prop markets</div></div>
+    <div class="card"><h3>Sportsbook odds</h3><div class="big"><span class="${oCls}">${oTxt}</span></div>
+      <div class="small">${esc(o.source==="oddsapi"?"The Odds API (backup)":o.source==="propline"?"PropLine":"—")} · ${when(o.updated_at)}</div></div>
+    <div class="card"><h3>Free quota (PropLine)</h3><div class="big">${num(rem)} left today</div>
+      <div class="small">${num(used)} used by this site · resets ${when(q.resets_at)}</div></div>
+    <div class="card"><h3>Next automatic run</h3><div class="big">${next?new Date(next).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"}):"—"}</div>
+      <div class="small">GitHub can start scheduled runs 5–20 min late</div></div>`;
+  const lb = $("limitBanner");
+  if(o.limit_message){ lb.textContent = o.limit_message; lb.classList.remove("hidden"); } else lb.classList.add("hidden");
+  $("genAt").textContent = "Data built " + (d.generated_at ? new Date(d.generated_at).toLocaleString() : "—");
+}
+
+function renderTable(){
+  const s = settings(), list = [];
+  for(const p of DATA.props||[]){
+    const e = evaluate(p, s); if(!e) continue;
+    if(!s.showAll && !e.qualifies) continue;
+    list.push({p,e});
+  }
+  list.sort((a,b)=> sortKey==="edge" ? b.e.edge-a.e.edge : b.e.fair-a.e.fair || b.e.edge-a.e.edge);
+  document.querySelectorAll("th.sortable").forEach(th=>th.classList.toggle("sorted", th.dataset.sort===sortKey));
+  $("tableTitle").textContent = s.showAll ? "All matched props" : "Today's Best Props";
+  const tb = $("rows");
+  if(!list.length){
+    const matched = (DATA.counts||{}).matched||0;
+    tb.innerHTML = `<tr><td colspan="10" class="empty">${
+      !(DATA.props||[]).length ? "Kalshi has no open NBA player props right now." :
+      matched===0 ? "No Kalshi props could be matched to a sportsbook line yet. See the sections below." :
+      `None of the ${matched} matched props clear your filters. Loosen them, or tick “Show every matched prop”.`}</td></tr>`;
+    return;
+  }
+  tb.innerHTML = list.map(({p,e},i)=>{
+    const lineTxt = `${p.threshold}+ <span class="small">(O/U ${p.line})</span>`;
+    const g = p.game||{};
+    const bookRows = p.books.map(b=>`<tr><td>${esc(b.title)}</td><td>${amer(b.over_price)}</td><td>${amer(b.under_price)}</td><td>${pct(b.vig)}</td><td>${pct(b.fair_over)}</td><td>${pct(b.fair_under)}</td><td>${b.updated?when(b.updated):"—"}</td></tr>`).join("");
+    const k = p.kalshi;
+    return `<tr class="main" data-i="${i}">
+      <td><b>${esc(p.player)}</b><div class="small">${esc(g.away||"?")} @ ${esc(g.home||"?")} · ${esc(g.date||"")}</div></td>
+      <td>${esc(p.stat_label)}</td>
+      <td class="num">${lineTxt}</td>
+      <td><span class="pill ${e.side==="YES"?"yes":"no"}">${e.side} · ${e.side==="YES"?"Over":"Under"}</span></td>
+      <td class="num">${cents(e.ask)} + ${cents(e.fee)}<div class="small">= ${cents(e.cost)}</div></td>
+      <td class="num">${pct(e.fair)}<div class="small">${p.consensus.n_books} book${p.consensus.n_books>1?"s":""}</div></td>
+      <td class="num ${e.edge>=0?"edge":"neg"}">${pts(e.edge)}</td>
+      <td class="num"><b>${pct(e.fair)}</b></td>
+      <td class="num">spread ${e.spread==null?"—":cents(e.spread)}<div class="small">vol ${num(k.volume)} · size ${num(e.size)}</div>${e.qualifies?"":`<div class="small err">fails: ${e.fails.join(", ")}</div>`}</td>
+      <td class="why">${why(p,e)}</td></tr>
+      <tr class="detail hidden" data-d="${i}"><td colspan="10">
+        <table class="books"><thead><tr><th>Book</th><th>Over</th><th>Under</th><th>Vig</th><th>Fair O</th><th>Fair U</th><th>Book updated</th></tr></thead><tbody>${bookRows}</tbody></table>
+        <div class="small" style="margin-top:6px">Kalshi ${esc(p.ticker)} · YES ${cents(k.yes_bid)}/${cents(k.yes_ask)} · NO ${cents(k.no_bid)}/${cents(k.no_ask)} · last ${cents(k.last)} · 24h vol ${num(k.volume_24h)} · open interest ${num(k.open_interest)}
+        ${p.mismatches.length?`<br>Other books at different lines: ${p.mismatches.map(m=>esc(m.title)+" "+m.lines.join("/")).join("; ")}`:""}</div>
+      </td></tr>`;
+  }).join("");
+  tb.querySelectorAll("tr.main").forEach(tr=>tr.addEventListener("click",()=>{
+    tb.querySelector(`tr[data-d="${tr.dataset.i}"]`).classList.toggle("hidden");
+  }));
+}
+
+function renderExtras(){
+  const props = DATA.props||[];
+  const mm = props.filter(p=>p.match_status==="line_mismatch");
+  $("mmCount").textContent = `(${mm.length})`;
+  $("mmList").innerHTML = mm.length ? `<table class="books"><thead><tr><th>Player</th><th>Stat</th><th>Kalshi</th><th>Book lines</th></tr></thead><tbody>${
+    mm.map(p=>`<tr><td>${esc(p.player)}</td><td>${esc(p.stat_label)}</td><td>${p.threshold}+ (O/U ${p.line})</td><td>${p.mismatches.map(m=>esc(m.title)+": "+m.lines.join(", ")).join(" · ")}</td></tr>`).join("")
+  }</tbody></table>` : `<p class="small">None.</p>`;
+  const um = props.filter(p=>p.match_status==="no_books"||p.match_status==="no_odds");
+  $("umCount").textContent = `(${um.length})`;
+  $("umList").innerHTML = um.length ? um.slice(0,200).map(p=>`${esc(p.player)} · ${esc(p.stat_label)} ${p.threshold}+`).join("<br>") : "None.";
+  const src = DATA.sources||{}, errs = [...((src.kalshi||{}).errors||[]), ...((src.odds||{}).errors||[])];
+  const per = Object.entries((src.kalshi||{}).per_series||{}).map(([k,v])=>`${k}: ${v}`).join(" · ");
+  $("diag").innerHTML = `
+    <p><b>Notes:</b> ${(DATA.notes||[]).map(esc).join("<br>")||"none"}</p>
+    <p><b>Errors:</b> ${errs.map(esc).join("<br>")||"none"}</p>
+    <p><b>Kalshi markets per series:</b> ${per||"—"}</p>
+    <p><b>Match counts:</b> ${Object.entries(DATA.counts||{}).map(([k,v])=>`${k} ${v}`).join(" · ")}</p>
+    <p><b>Kalshi markets the parser couldn't read</b> (${(DATA.unparsed_kalshi||[]).length}): ${(DATA.unparsed_kalshi||[]).slice(0,15).map(u=>"<code>"+esc(u.yes_sub_title||u.title||u.ticker)+"</code>").join(" ")||"none"}</p>
+    <p>Build took ${DATA.run_seconds??"—"}s. ${DATA.last_attempt_at?"Last failed attempt "+when(DATA.last_attempt_at)+".":""}</p>`;
+}
+
+function render(){ if(!DATA) return; renderStatus(); renderTable(); renderExtras(); }
+
+async function loadData(){
+  const r = await fetch("data/nba.json?t="+Date.now(), {cache:"no-store"});
+  if(!r.ok) throw new Error("data/nba.json not found yet — run the workflow once (see README).");
+  DATA = await r.json(); liveAt = null;
+}
+
+async function liveKalshi(){
+  const tickers = (DATA.props||[]).map(p=>p.ticker).filter(Boolean);
+  if(!tickers.length) return "No Kalshi props to update.";
+  for(const host of KALSHI_HOSTS){
+    try{
+      const byTicker = {};
+      for(let i=0;i<tickers.length;i+=100){
+        const r = await fetch(`${host}/markets?limit=1000&tickers=${encodeURIComponent(tickers.slice(i,i+100).join(","))}`);
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        const js = await r.json();
+        for(const m of js.markets||[]) byTicker[m.ticker] = m;
+      }
+      let n = 0;
+      const f = x => x==null||x==="" ? null : Number(x);
+      for(const p of DATA.props){
+        const m = byTicker[p.ticker]; if(!m) continue;
+        const yb=f(m.yes_bid_dollars), ya=f(m.yes_ask_dollars);
+        Object.assign(p.kalshi, {yes_bid:yb, yes_ask:ya, no_bid:f(m.no_bid_dollars), no_ask:f(m.no_ask_dollars),
+          yes_ask_size:f(m.yes_ask_size_fp), yes_bid_size:f(m.yes_bid_size_fp), last:f(m.last_price_dollars),
+          volume:f(m.volume_fp), volume_24h:f(m.volume_24h_fp), open_interest:f(m.open_interest_fp),
+          spread:(ya!=null&&yb)?ya-yb:null});
+        n++;
+      }
+      liveAt = new Date().toISOString();
+      return `Live Kalshi prices pulled for ${n} markets. Sportsbook odds are from the last automated run.`;
+    }catch(e){ /* try next host */ }
+  }
+  return "Your browser couldn't reach Kalshi directly (Kalshi may block browser requests). Showing Kalshi prices from the last automated run.";
+}
+
+async function refresh(){
+  const b = $("refreshBtn"); b.disabled = true; b.textContent = "Refreshing…";
+  try{
+    await loadData();
+    $("refreshMsg").textContent = await liveKalshi();
+  }catch(e){ $("refreshMsg").textContent = e.message; }
+  render(); b.disabled = false; b.textContent = "Refresh";
+}
+
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", x===t));
+  $("tab-nba").classList.toggle("hidden", t.dataset.tab!=="nba");
+  $("tab-nfl").classList.toggle("hidden", t.dataset.tab!=="nfl");
+}));
+document.querySelectorAll("th.sortable").forEach(th=>th.addEventListener("click",()=>{ sortKey=th.dataset.sort; $("sortBy").value=sortKey; renderTable(); }));
+$("sortBy").addEventListener("change", e=>{ sortKey=e.target.value; renderTable(); });
+["minEdge","maxSpread","minVol","orderSize","showAll"].forEach(id=>$(id).addEventListener("input", renderTable));
+$("refreshBtn").addEventListener("click", refresh);
+
+(async()=>{
+  try{ await loadData(); render(); }
+  catch(e){ $("rows").innerHTML = `<tr><td colspan="10" class="empty">${esc(e.message)}</td></tr>`; $("genAt").textContent=""; }
+})();
+</script>
+</body>
+</html>

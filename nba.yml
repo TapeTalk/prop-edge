@@ -1,0 +1,51 @@
+name: NBA props update
+
+on:
+  schedule:
+    # Times are UTC. These equal 10:07 AM, 5:07 PM and 6:37 PM Eastern Standard Time
+    # (Nov–Mar). During daylight time (Mar–Nov) they land one hour later.
+    # If you change these, also change SCHEDULE_UTC near the top of scripts/build_nba.py.
+    - cron: "7 15 * * *"
+    - cron: "7 22 * * *"
+    - cron: "37 23 * * *"
+  workflow_dispatch: {}      # adds the "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build NBA board
+        env:
+          PROPLINE_API_KEY: ${{ secrets.PROPLINE_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python scripts/build_nba.py
+
+      - name: Save data to the repo
+        run: |
+          git config user.name "props-bot"
+          git config user.email "props-bot@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes."
+            exit 0
+          fi
+          git commit -m "NBA data $(date -u +'%Y-%m-%d %H:%M') UTC"
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            sleep 5
+          done
+          exit 1
